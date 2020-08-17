@@ -1,10 +1,19 @@
-package com.github.antoinecheron.commons.repositories
+package com.github.antoinecheron.infrastructure.taskmanagement.persistence
+
+/**
+ * This file contains a repository. Its role is to manage how the data is stored into the database.
+ * Thus, it should manage as row data as possible.
+ * It must not implement any business logic. This must be in an Aggregate.
+ *
+ */
+
+// TODO: handle errors properly, with dedicated classes instead of ApiError
 
 import kotlinx.coroutines.flow.*
 
-import com.github.antoinecheron.commons.Status
-import com.github.antoinecheron.commons.Todo
-import com.github.antoinecheron.restapi.ApiError
+import com.github.antoinecheron.domain.taskmanagement.Status
+import com.github.antoinecheron.application.restapi.ApiError
+import com.github.antoinecheron.infrastructure.taskmanagement.TodoRow
 import kotlinx.coroutines.reactive.awaitFirst
 import org.springframework.data.r2dbc.core.*
 
@@ -14,25 +23,25 @@ import org.springframework.stereotype.Repository
 @Repository
 class TodoRepository (private val client: DatabaseClient) {
 
-  fun findAllWithStatus (status: Status): Flow<Todo> =
+  fun findAllWithStatus (status: Status): Flow<TodoRow> =
     if (status == Status.ALL) {
-      client.select().from<Todo>().fetch().flow()
+      client.select().from<TodoRow>().fetch().flow()
     } else {
       val searchForCompletedTasks = status == Status.COMPLETED
-      client.select().from<Todo>()
+      client.select().from<TodoRow>()
         .matching(Criteria.where("completed").`is`(searchForCompletedTasks))
         .fetch()
         .flow()
     }
 
-  suspend fun create (todo: Todo): Todo {
-    client.insert().into<Todo>().using(todo).await()
+  suspend fun create (todo: TodoRow): TodoRow {
+    client.insert().into<TodoRow>().using(todo).await()
     return todo
   }
 
   @Throws(ApiError::class)
-  suspend fun update (todo: Todo): Todo {
-    val rowsUpdated = client.update().table<Todo>().using(todo).fetch().rowsUpdated().awaitFirst()
+  suspend fun update (todo: TodoRow): TodoRow {
+    val rowsUpdated = client.update().table<TodoRow>().using(todo).fetch().rowsUpdated().awaitFirst()
 
     return if (rowsUpdated == 1) {
       todo
@@ -43,7 +52,7 @@ class TodoRepository (private val client: DatabaseClient) {
 
   @Throws(ApiError::class)
   suspend fun delete (id: String): Unit {
-    val rowsUpdated = client.delete().from<Todo>()
+    val rowsUpdated = client.delete().from<TodoRow>()
       .matching(Criteria.where("id").`is`(id)).fetch().rowsUpdated().awaitFirst()
 
     if (rowsUpdated == 0) {
@@ -52,11 +61,11 @@ class TodoRepository (private val client: DatabaseClient) {
   }
 
   suspend fun deleteByStatus (status: Status): Unit = if (status == Status.ALL) {
-    client.delete().from<Todo>().fetch().rowsUpdated().awaitFirst()
+    client.delete().from<TodoRow>().fetch().rowsUpdated().awaitFirst()
     Unit
   } else {
     val searchForCompletedTasks = status == Status.COMPLETED
-    client.delete().from<Todo>()
+    client.delete().from<TodoRow>()
       .matching(Criteria.where("completed").`is`(searchForCompletedTasks))
       .fetch().rowsUpdated().awaitFirst()
     Unit

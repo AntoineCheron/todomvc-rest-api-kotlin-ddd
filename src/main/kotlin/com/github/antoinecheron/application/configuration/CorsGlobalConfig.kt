@@ -1,4 +1,4 @@
-package com.github.antoinecheron.commons
+package com.github.antoinecheron.application.configuration
 
 import org.springframework.context.annotation.Configuration
 import org.springframework.web.reactive.config.CorsRegistry
@@ -7,7 +7,7 @@ import org.springframework.web.reactive.config.WebFluxConfigurer
 
 @Configuration
 @EnableWebFlux
-open class CorsGlobalConfig : WebFluxConfigurer {
+class CorsGlobalConfig : WebFluxConfigurer {
 
   override fun addCorsMappings(registry: CorsRegistry) {
     registry.addMapping("/**")
