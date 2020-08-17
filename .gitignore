@@ -1,0 +1,12 @@
+DS_Store
+.idea
+build
+target
+.gradle
+out
+.vscode
+.classpath
+.project
+bin/
+.settings
+r2dbc:h2:mem:

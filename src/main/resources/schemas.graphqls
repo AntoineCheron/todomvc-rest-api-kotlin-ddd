@@ -1,0 +1,24 @@
+type Query {
+    todos(status: Status = ALL): [Todo]
+}
+
+type Mutation {
+    createTodo(title: String!): Todo
+    updateTodo(id: ID!, title: String!, completed: Boolean!): Ok
+    deleteTodo(id: ID!): Ok
+    deleteTodos(status: Status = COMPLETED): Ok
+}
+
+scalar Ok
+
+type Todo {
+    id: ID!
+    title: String!
+    completed: Boolean!
+}
+
+enum Status {
+    ALL
+    ACTIVE
+    COMPLETED
+}

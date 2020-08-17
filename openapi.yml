@@ -1,0 +1,169 @@
+openapi: '3.0.3'
+info:
+  version: 1.0.0
+  title: TODO MVC REST API
+  contact:
+    name: Antoine Cheron
+    email: cheron.antoine@gmail.com
+
+paths:
+  /todos:
+    get:
+      summary: Get all the todos
+      operationId: listTodos
+      tags:
+        - todo
+      security:
+        - basicAuth: []
+      parameters:
+        - name: status
+          in: query
+          description: The status expected for the queried todos
+          required: false
+          schema:
+            type: string
+            enum:
+              - all
+              - completed
+              - active
+            default: all
+      responses:
+        '200':
+          description: List of todos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TodoCollection'
+
+    delete:
+      summary: Delete the todos with the selected status, by default the completed todos
+      operationId: deleteTodosByStatus
+      tags:
+        - todo
+      parameters:
+        - name: status
+          in: query
+          description: The status expected for the queried todos
+          required: false
+          schema:
+            type: string
+            enum:
+              - all
+              - completed
+              - active
+            default: completed
+      security:
+        - basicAuth: []
+      responses:
+        '204':
+          description: Confirmation
+
+  /todo:
+    post:
+      summary: Create a new todo
+      operationId: createTodo
+      tags:
+        - todo
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TodoCreationRequest'
+      security:
+        - basicAuth: []
+      responses:
+        '201':
+          description: The newly created todo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Todo'
+
+  /todo/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      summary: Update an existing todo
+      operationId: updateTodo
+      tags:
+        - todo
+      security:
+        - basicAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TodoUpdateRequest'
+      responses:
+        '204':
+          description: Confirmation
+    delete:
+      summary: Delete the todo
+      operationId: deleteTodoById
+      tags:
+        - todo
+      security:
+        - basicAuth: []
+      responses:
+        '204':
+          description: Confirmation
+
+components:
+  parameters:
+    status:
+      name: status
+      in: query
+      description: The status expected for the queried todos
+      required: false
+      schema:
+        type: string
+        enum:
+          - all
+          - completed
+          - active
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+      description: Basic login/password http authentication
+  schemas:
+    TodoCollection:
+      type: object
+      properties:
+        todos:
+          $ref: '#/components/schemas/Todos'
+    Todos:
+      type: array
+      items:
+        $ref: '#/components/schemas/Todo'
+    Todo:
+      type: object
+      required: ['id', 'title', 'completed']
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+          minLength: 1
+        completed:
+          type: boolean
+    TodoCreationRequest:
+      type: object
+      required: ['title']
+      properties:
+        title:
+          type: string
+          minLength: 1
+    TodoUpdateRequest:
+      type: object
+      required: ['title', 'completed']
+      properties:
+        title:
+          type: string
+          minLength: 1
+        completed:
+          type: boolean
