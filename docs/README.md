@@ -16,12 +16,17 @@ Login (default credentials are admin/admin) and create a new project named `todo
 
 You can now run sonar analysis locally.
 
+#### Descartes
+
+[Installation instructions](https://github.com/STAMP-project/pitest-descartes)
+
 ### How to use
 
 * Lint code: `./gradlew ktlintCheck`
 * Format code: `./gradlew ktlintFormat`
 * Code analysis with Detekt: `./gradlew detekt`
 * Code analysis with Sonar: `./scripts/run-sonar-scanner.sh`
+* Mutation tests: `./gradlew pitest`
 
 ## Others
 
