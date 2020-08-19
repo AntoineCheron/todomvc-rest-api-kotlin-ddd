@@ -13,34 +13,33 @@ package com.github.antoinecheron.infrastructure.taskmanagement.services
 
 import com.github.antoinecheron.infrastructure.taskmanagement.persistence.TodoRepository
 import com.github.antoinecheron.application.restapi.ApiError
-import com.github.antoinecheron.domain.taskmanagement.*
-import com.github.antoinecheron.infrastructure.taskmanagement.TodoRow
-import com.github.antoinecheron.infrastructure.taskmanagement.fromTodo
-import com.github.antoinecheron.infrastructure.taskmanagement.toTodo
+import com.github.antoinecheron.domain.taskmanagement.entities.TodoCommand
+import com.github.antoinecheron.domain.taskmanagement.entities.TodoState
+import com.github.antoinecheron.domain.taskmanagement.logic.TodoAggregate
+import com.github.antoinecheron.infrastructure.taskmanagement.Status
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 import org.springframework.stereotype.Service
 
 @Service
 class TodoService (private val todoRepository: TodoRepository) {
 
-  fun list (command: ListTodoCommand): Flow<Todo> =
-    todoRepository.findAllWithStatus(command.status).map { todoRow -> todoRow.toTodo() }
+  fun list (status: Status): Flow<TodoState> =
+    todoRepository.findAllWithStatus(status)
 
-  suspend fun create (command: CreateTodoCommand): Todo {
-    val todoRow = TodoRow.fromTodo(createTodo(command))
-    val createdTodo = todoRepository.create(todoRow)
-    return createdTodo.toTodo()
+  suspend fun create (title: String): TodoState {
+    val todo = TodoAggregate.create(title)
+    return todoRepository.save(todo)
+  }
+
+  suspend fun handleAndSave (id: String, command: TodoCommand): TodoState {
+    val newState = TodoAggregate.handle(id, command)
+    return todoRepository.save(newState)
   }
 
   @Throws(ApiError::class)
-  suspend fun update (command: UpdateTodoCommand) =
-    todoRepository.update(TodoRow.fromTodo(updateTodo(command))).toTodo()
+  suspend fun delete (id: String) =
+    todoRepository.delete(id)
 
-  @Throws(ApiError::class)
-  suspend fun delete (command: DeleteTodoCommand) =
-    todoRepository.delete(command.id)
-
-  suspend fun deleteMany (command: DeleteManyTodoCommand) =
-    todoRepository.deleteByStatus(command.status)
+  suspend fun deleteMany (status: Status) =
+    todoRepository.deleteByStatus(status)
 }

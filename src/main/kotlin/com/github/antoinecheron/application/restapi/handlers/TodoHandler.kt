@@ -10,9 +10,7 @@ package com.github.antoinecheron.application.restapi.handlers
 
 import com.github.antoinecheron.infrastructure.taskmanagement.services.TodoService
 import com.github.antoinecheron.application.restapi.*
-import com.github.antoinecheron.domain.taskmanagement.CreateTodoCommand
-import com.github.antoinecheron.domain.taskmanagement.DeleteTodoCommand
-import com.github.antoinecheron.domain.taskmanagement.UpdateTodoCommand
+import com.github.antoinecheron.domain.taskmanagement.entities.UpdateTodoCommand
 
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.server.*
@@ -23,10 +21,10 @@ class TodoHandler (private val todoService: TodoService) {
 
   suspend fun createTodo (serverRequest: ServerRequest): ServerResponse =
     try {
-      val creationRequest = serverRequest.awaitBody<CreateTodoCommand>()
+      val creationRequest = serverRequest.awaitBody<CreateTodoPayload>()
       validateTodoCreationRequest(creationRequest)
 
-      val createdTodo = todoService.create(creationRequest)
+      val createdTodo = todoService.create(creationRequest.title)
 
       ServerResponse
         .created(URI.create("/todo/${createdTodo.id}"))
@@ -41,8 +39,8 @@ class TodoHandler (private val todoService: TodoService) {
       val updateRequest = serverRequest.awaitBody<TodoUpdatePayload>()
       validateTodoUpdateRequest(updateRequest)
 
-      val command = UpdateTodoCommand(id, updateRequest.title, updateRequest.completed)
-      todoService.update(command)
+      val command = UpdateTodoCommand(updateRequest.title, updateRequest.completed)
+      todoService.handleAndSave(id, command)
 
       ServerResponse.noContent().buildAndAwait()
     } catch (error: ApiError) {
@@ -52,10 +50,7 @@ class TodoHandler (private val todoService: TodoService) {
   suspend fun deleteTodo (serverRequest: ServerRequest): ServerResponse =
     try {
       val id = serverRequest.pathVariable("id")
-
-      val command = DeleteTodoCommand(id)
-      todoService.delete(command)
-
+      todoService.delete(id)
       ServerResponse.noContent().buildAndAwait()
     } catch (error: ApiError) {
       error.toServerResponse()

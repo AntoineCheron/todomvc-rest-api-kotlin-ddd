@@ -10,10 +10,10 @@ package com.github.antoinecheron.application.restapi
 import org.springframework.web.reactive.function.server.ServerResponse
 import org.springframework.web.reactive.function.server.bodyValueAndAwait
 
+data class CreateTodoPayload (val title: String)
+data class TodoUpdatePayload (val title: String, val completed: Boolean)
+data class ErrorPayload (val error: String)
+
 data class ApiError (override val message: String, val code: Int): Exception(message) {
   suspend fun toServerResponse () = ServerResponse.status(code).bodyValueAndAwait(ErrorPayload(message))
 }
-
-data class ErrorPayload (val error: String)
-
-data class TodoUpdatePayload (val title: String, val completed: Boolean)

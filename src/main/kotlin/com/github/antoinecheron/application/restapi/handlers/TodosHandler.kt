@@ -8,13 +8,13 @@ package com.github.antoinecheron.application.restapi.handlers
  *
  */
 
-import com.github.antoinecheron.domain.taskmanagement.DeleteManyTodoCommand
-import com.github.antoinecheron.domain.taskmanagement.ListTodoCommand
-import com.github.antoinecheron.domain.taskmanagement.Status
-import com.github.antoinecheron.domain.taskmanagement.TodoCollection
+import com.github.antoinecheron.domain.taskmanagement.entities.TodoState
+import com.github.antoinecheron.infrastructure.taskmanagement.Status
 import com.github.antoinecheron.infrastructure.taskmanagement.services.TodoService
 
 import kotlinx.coroutines.flow.toList
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageImpl
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.server.*
 
@@ -24,10 +24,9 @@ class TodosHandler (private val todoService: TodoService) {
   suspend fun listTodos(request: ServerRequest): ServerResponse {
     val statusFromQuery = request.queryParamOrNull("status")
     val status = Status.of(statusFromQuery) ?: Status.ALL
-    val command = ListTodoCommand(status)
 
-    val todoList = todoService.list(command).toList()
-    val bodyRepresentation = TodoCollection(todoList)
+    val todoList = todoService.list(status).toList()
+    val bodyRepresentation: Page<TodoState> = PageImpl<TodoState>(todoList)
 
     return ServerResponse.ok().bodyValueAndAwait(bodyRepresentation)
   }
@@ -35,9 +34,8 @@ class TodosHandler (private val todoService: TodoService) {
   suspend fun deleteManyByStatus(request: ServerRequest): ServerResponse {
     val statusFromQuery = request.queryParamOrNull("status")
     val status = Status.of(statusFromQuery) ?: Status.COMPLETED
-    val command = DeleteManyTodoCommand(status)
 
-    todoService.deleteMany(command)
+    todoService.deleteMany(status)
 
     return ServerResponse.noContent().buildAndAwait()
   }

@@ -7,9 +7,7 @@ package com.github.antoinecheron.application.restapi
  *
  */
 
-import com.github.antoinecheron.domain.taskmanagement.CreateTodoCommand
-
-fun validateTodoCreationRequest (toValidate: CreateTodoCommand) =
+fun validateTodoCreationRequest (toValidate: CreateTodoPayload) =
   if (isValid(toValidate.title)) {
     toValidate
   } else {

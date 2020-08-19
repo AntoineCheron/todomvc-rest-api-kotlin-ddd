@@ -1,4 +1,4 @@
-package com.github.antoinecheron.domain.taskmanagement
+package com.github.antoinecheron.domain.taskmanagement.logic
 
 /**
  * This file is an aggregate in the sense of Domain Driven Design
@@ -14,12 +14,22 @@ package com.github.antoinecheron.domain.taskmanagement
  *
  */
 
+import com.github.antoinecheron.domain.taskmanagement.entities.TodoCommand
+import com.github.antoinecheron.domain.taskmanagement.entities.TodoState
+import com.github.antoinecheron.domain.taskmanagement.entities.UpdateTodoCommand
 import java.util.UUID
 
-fun createTodo(createTodoCommand: CreateTodoCommand): Todo =
-  Todo(generateId(), createTodoCommand.title, false)
+class TodoAggregate {
+    companion object {
 
-fun updateTodo(command: UpdateTodoCommand): Todo =
-  Todo(command.id, command.title, command.completed)
+        fun create(title: String): TodoState =
+            TodoState(generateId(), title, false)
+
+        fun handle(id: String, command: TodoCommand): TodoState =
+            when (command) {
+                is UpdateTodoCommand -> updateTodo(id, command)
+            }
+    }
+}
 
 private fun generateId(): String = UUID.randomUUID().toString()
