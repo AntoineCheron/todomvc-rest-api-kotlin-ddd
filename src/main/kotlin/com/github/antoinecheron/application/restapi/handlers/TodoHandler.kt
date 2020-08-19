@@ -1,11 +1,18 @@
-package com.github.antoinecheron.restapi.controllers
+package com.github.antoinecheron.application.restapi.handlers
 
-import com.github.antoinecheron.commons.services.TodoService
-import com.github.antoinecheron.restapi.*
+/**
+ * This file contains a REST API command handler.
+ *
+ * The role of each function is to verify the incoming parameters, call the proper service
+ * (only one service call is authorized per function) and then return the proper HTTP response (positive or error)
+ *
+ */
 
-import org.springframework.http.HttpStatus
+import com.github.antoinecheron.infrastructure.taskmanagement.services.TodoService
+import com.github.antoinecheron.application.restapi.*
+import com.github.antoinecheron.domain.taskmanagement.entities.UpdateTodoCommand
+
 import org.springframework.stereotype.Component
-import org.springframework.web.bind.annotation.*
 import org.springframework.web.reactive.function.server.*
 import java.net.URI
 
@@ -14,8 +21,9 @@ class TodoHandler (private val todoService: TodoService) {
 
   suspend fun createTodo (serverRequest: ServerRequest): ServerResponse =
     try {
-      val creationRequest = serverRequest.awaitBody<TodoCreationRequest>()
+      val creationRequest = serverRequest.awaitBody<CreateTodoPayload>()
       validateTodoCreationRequest(creationRequest)
+
       val createdTodo = todoService.create(creationRequest.title)
 
       ServerResponse
@@ -28,9 +36,12 @@ class TodoHandler (private val todoService: TodoService) {
   suspend fun updateTodo (serverRequest: ServerRequest): ServerResponse =
     try {
       val id = serverRequest.pathVariable("id")
-      val updateRequest = serverRequest.awaitBody<TodoUpdateRequest>()
+      val updateRequest = serverRequest.awaitBody<TodoUpdatePayload>()
       validateTodoUpdateRequest(updateRequest)
-      todoService.update(id, updateRequest.title, updateRequest.completed)
+
+      val command = UpdateTodoCommand(updateRequest.title, updateRequest.completed)
+      todoService.handleAndSave(id, command)
+
       ServerResponse.noContent().buildAndAwait()
     } catch (error: ApiError) {
       error.toServerResponse()
