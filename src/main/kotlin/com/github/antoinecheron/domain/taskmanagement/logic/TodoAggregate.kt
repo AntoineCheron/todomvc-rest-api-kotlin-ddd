@@ -19,17 +19,15 @@ import com.github.antoinecheron.domain.taskmanagement.entities.TodoState
 import com.github.antoinecheron.domain.taskmanagement.entities.UpdateTodoCommand
 import java.util.UUID
 
-class TodoAggregate {
-    companion object {
+object TodoAggregate {
 
-        fun create(title: String): TodoState =
-            TodoState(generateId(), title, false)
+    fun create(title: String): TodoState =
+        TodoState(generateId(), title, false)
 
-        fun handle(id: String, command: TodoCommand): TodoState =
-            when (command) {
-                is UpdateTodoCommand -> updateTodo(id, command)
-            }
-    }
+    fun handle(id: String, command: TodoCommand): TodoState =
+        when (command) {
+            is UpdateTodoCommand -> updateTodo(id, command)
+        }
 }
 
 private fun generateId(): String = UUID.randomUUID().toString()

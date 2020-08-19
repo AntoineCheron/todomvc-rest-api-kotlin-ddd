@@ -10,3 +10,5 @@ out
 bin/
 .settings
 r2dbc:h2:mem:
+.scannerwork
+path

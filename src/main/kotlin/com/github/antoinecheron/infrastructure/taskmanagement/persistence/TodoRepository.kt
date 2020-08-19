@@ -6,16 +6,15 @@ package com.github.antoinecheron.infrastructure.taskmanagement.persistence
  * It must not implement any business logic. This must be in an Aggregate.
  * It must not have any knowledge of the commands.
  *
+ * TODO: handle errors properly, with dedicated classes instead of ApiError
  */
 
-// TODO: handle errors properly, with dedicated classes instead of ApiError
-
 import com.github.antoinecheron.application.restapi.ApiError
+import com.github.antoinecheron.application.restapi.utils.Http
 import com.github.antoinecheron.domain.taskmanagement.entities.TodoState
+import com.github.antoinecheron.infrastructure.taskmanagement.Adapters
 import com.github.antoinecheron.infrastructure.taskmanagement.Status
 import com.github.antoinecheron.infrastructure.taskmanagement.TodoRow
-import com.github.antoinecheron.infrastructure.taskmanagement.fromTodo
-import com.github.antoinecheron.infrastructure.taskmanagement.toTodo
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.reactive.awaitFirst
@@ -34,12 +33,13 @@ const val TODO_TABLE_NAME = "todo"
 class TodoRepository(private val client: DatabaseClient) {
 
     suspend fun findById(id: String): TodoState =
-        client.select().from(TODO_TABLE_NAME)
-            .asType<TodoRow>()
-            .matching(Criteria.where("id").`is`(id))
-            .fetch()
-            .awaitFirst()
-            .toTodo()
+        Adapters.toTodo(
+            client.select().from(TODO_TABLE_NAME)
+                .asType<TodoRow>()
+                .matching(Criteria.where("id").`is`(id))
+                .fetch()
+                .awaitFirst()
+        )
 
     fun findAllWithStatus(status: Status): Flow<TodoState> {
         val query = if (status == Status.ALL) {
@@ -50,11 +50,11 @@ class TodoRepository(private val client: DatabaseClient) {
                 .matching(Criteria.where("completed").`is`(searchForCompletedTasks))
         }
 
-        return query.fetch().flow().map { row -> row.toTodo() }
+        return query.fetch().flow().map { row -> Adapters.toTodo(row) }
     }
 
     suspend fun save(todo: TodoState): TodoState {
-        val row = TodoRow.fromTodo(todo)
+        val row = Adapters.toTodoRow(todo)
 
         client.execute(
             """
@@ -64,7 +64,7 @@ class TodoRepository(private val client: DatabaseClient) {
         )
             .await()
 
-        return row.toTodo()
+        return Adapters.toTodo(row)
     }
 
     @Throws(ApiError::class)
@@ -73,7 +73,7 @@ class TodoRepository(private val client: DatabaseClient) {
             .matching(Criteria.where("id").`is`(id)).fetch().rowsUpdated().awaitFirst()
 
         if (rowsUpdated == 0) {
-            throw ApiError("Todo with id $id does not exist.", 404)
+            throw ApiError("Todo with id $id does not exist.", Http.StatusCode.NOT_FOUND)
         }
     }
 

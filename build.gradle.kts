@@ -9,6 +9,7 @@ plugins {
 
     id("org.jlleitschuh.gradle.ktlint") version "9.3.0"
     id("org.jlleitschuh.gradle.ktlint-idea") version "9.3.0"
+    id("io.gitlab.arturbosch.detekt") version "1.11.1"
 }
 
 group = "com.github.antoinecheron"
@@ -16,8 +17,14 @@ version = "1.0.0"
 java.sourceCompatibility = JavaVersion.VERSION_1_8
 
 repositories {
-    mavenCentral()
+    jcenter()
     maven { url = uri("https://repo.spring.io/milestone") }
+}
+
+buildscript {
+    repositories {
+        jcenter()
+    }
 }
 
 val coroutinesVersion = "1.3.72"
@@ -59,13 +66,33 @@ dependencyManagement {
     }
 }
 
-tasks.withType<Test> {
-    useJUnitPlatform()
+tasks {
+    withType<Test> {
+        useJUnitPlatform()
+    }
+
+    withType<KotlinCompile> {
+        kotlinOptions {
+            freeCompilerArgs = listOf("-Xjsr305=strict")
+            jvmTarget = "1.8"
+        }
+    }
+
+    withType<io.gitlab.arturbosch.detekt.Detekt> {
+        // Target version of the generated JVM bytecode. It is used for type resolution.
+        this.jvmTarget = "1.8"
+    }
 }
 
-tasks.withType<KotlinCompile> {
-    kotlinOptions {
-        freeCompilerArgs = listOf("-Xjsr305=strict")
-        jvmTarget = "1.8"
+detekt {
+    failFast = true
+    buildUponDefaultConfig = true // preconfigure defaults
+    baseline = file("${rootProject.projectDir}/config/baseline.xml")
+
+    reports {
+        html {
+            enabled = true
+            destination = file("path/to/destination.html")
+        }
     }
 }
