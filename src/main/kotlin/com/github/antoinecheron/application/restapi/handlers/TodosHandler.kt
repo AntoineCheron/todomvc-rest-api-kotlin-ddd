@@ -11,33 +11,35 @@ package com.github.antoinecheron.application.restapi.handlers
 import com.github.antoinecheron.domain.taskmanagement.entities.TodoState
 import com.github.antoinecheron.infrastructure.taskmanagement.Status
 import com.github.antoinecheron.infrastructure.taskmanagement.services.TodoService
-
 import kotlinx.coroutines.flow.toList
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.stereotype.Component
-import org.springframework.web.reactive.function.server.*
+import org.springframework.web.reactive.function.server.ServerRequest
+import org.springframework.web.reactive.function.server.ServerResponse
+import org.springframework.web.reactive.function.server.bodyValueAndAwait
+import org.springframework.web.reactive.function.server.buildAndAwait
+import org.springframework.web.reactive.function.server.queryParamOrNull
 
 @Component
-class TodosHandler (private val todoService: TodoService) {
+class TodosHandler(private val todoService: TodoService) {
 
-  suspend fun listTodos(request: ServerRequest): ServerResponse {
-    val statusFromQuery = request.queryParamOrNull("status")
-    val status = Status.of(statusFromQuery) ?: Status.ALL
+    suspend fun listTodos(request: ServerRequest): ServerResponse {
+        val statusFromQuery = request.queryParamOrNull("status")
+        val status = Status.of(statusFromQuery) ?: Status.ALL
 
-    val todoList = todoService.list(status).toList()
-    val bodyRepresentation: Page<TodoState> = PageImpl<TodoState>(todoList)
+        val todoList = todoService.list(status).toList()
+        val bodyRepresentation: Page<TodoState> = PageImpl<TodoState>(todoList)
 
-    return ServerResponse.ok().bodyValueAndAwait(bodyRepresentation)
-  }
+        return ServerResponse.ok().bodyValueAndAwait(bodyRepresentation)
+    }
 
-  suspend fun deleteManyByStatus(request: ServerRequest): ServerResponse {
-    val statusFromQuery = request.queryParamOrNull("status")
-    val status = Status.of(statusFromQuery) ?: Status.COMPLETED
+    suspend fun deleteManyByStatus(request: ServerRequest): ServerResponse {
+        val statusFromQuery = request.queryParamOrNull("status")
+        val status = Status.of(statusFromQuery) ?: Status.COMPLETED
 
-    todoService.deleteMany(status)
+        todoService.deleteMany(status)
 
-    return ServerResponse.noContent().buildAndAwait()
-  }
-
+        return ServerResponse.noContent().buildAndAwait()
+    }
 }

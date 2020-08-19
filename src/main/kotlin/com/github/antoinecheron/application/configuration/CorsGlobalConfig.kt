@@ -9,10 +9,9 @@ import org.springframework.web.reactive.config.WebFluxConfigurer
 @EnableWebFlux
 class CorsGlobalConfig : WebFluxConfigurer {
 
-  override fun addCorsMappings(registry: CorsRegistry) {
-    registry.addMapping("/**")
-      .allowedOrigins("http://localhost:3000")
-      .allowedMethods("*")
-  }
-
+    override fun addCorsMappings(registry: CorsRegistry) {
+        registry.addMapping("/**")
+            .allowedOrigins("http://localhost:3000")
+            .allowedMethods("*")
+    }
 }

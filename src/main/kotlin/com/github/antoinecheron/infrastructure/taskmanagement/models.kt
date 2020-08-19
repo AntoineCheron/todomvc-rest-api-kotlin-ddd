@@ -7,20 +7,19 @@ package com.github.antoinecheron.infrastructure.taskmanagement
 
 import org.springframework.data.annotation.Id
 
-data class TodoRow (@Id val id: String, val title: String, val completed: Boolean) {
-  companion object { }
+data class TodoRow(@Id val id: String, val title: String, val completed: Boolean) {
+    companion object { }
 }
 
 enum class Status {
-  ALL, COMPLETED, ACTIVE;
+    ALL, COMPLETED, ACTIVE;
 
-  companion object {
+    companion object {
 
-    fun of (s: String?): Status? = try {
-      if (s != null) valueOf(s) else null
-    } catch (e: IllegalArgumentException) {
-      null
+        fun of(s: String?): Status? = try {
+            if (s != null) valueOf(s) else null
+        } catch (e: IllegalArgumentException) {
+            null
+        }
     }
-
-  }
 }

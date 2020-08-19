@@ -11,35 +11,35 @@ package com.github.antoinecheron.infrastructure.taskmanagement.services
  *
  */
 
-import com.github.antoinecheron.infrastructure.taskmanagement.persistence.TodoRepository
 import com.github.antoinecheron.application.restapi.ApiError
 import com.github.antoinecheron.domain.taskmanagement.entities.TodoCommand
 import com.github.antoinecheron.domain.taskmanagement.entities.TodoState
 import com.github.antoinecheron.domain.taskmanagement.logic.TodoAggregate
 import com.github.antoinecheron.infrastructure.taskmanagement.Status
+import com.github.antoinecheron.infrastructure.taskmanagement.persistence.TodoRepository
 import kotlinx.coroutines.flow.Flow
 import org.springframework.stereotype.Service
 
 @Service
-class TodoService (private val todoRepository: TodoRepository) {
+class TodoService(private val todoRepository: TodoRepository) {
 
-  fun list (status: Status): Flow<TodoState> =
-    todoRepository.findAllWithStatus(status)
+    fun list(status: Status): Flow<TodoState> =
+        todoRepository.findAllWithStatus(status)
 
-  suspend fun create (title: String): TodoState {
-    val todo = TodoAggregate.create(title)
-    return todoRepository.save(todo)
-  }
+    suspend fun create(title: String): TodoState {
+        val todo = TodoAggregate.create(title)
+        return todoRepository.save(todo)
+    }
 
-  suspend fun handleAndSave (id: String, command: TodoCommand): TodoState {
-    val newState = TodoAggregate.handle(id, command)
-    return todoRepository.save(newState)
-  }
+    suspend fun handleAndSave(id: String, command: TodoCommand): TodoState {
+        val newState = TodoAggregate.handle(id, command)
+        return todoRepository.save(newState)
+    }
 
-  @Throws(ApiError::class)
-  suspend fun delete (id: String) =
-    todoRepository.delete(id)
+    @Throws(ApiError::class)
+    suspend fun delete(id: String) =
+        todoRepository.delete(id)
 
-  suspend fun deleteMany (status: Status) =
-    todoRepository.deleteByStatus(status)
+    suspend fun deleteMany(status: Status) =
+        todoRepository.deleteByStatus(status)
 }

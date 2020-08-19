@@ -10,77 +10,81 @@ package com.github.antoinecheron.infrastructure.taskmanagement.persistence
 
 // TODO: handle errors properly, with dedicated classes instead of ApiError
 
-import kotlinx.coroutines.flow.*
-
 import com.github.antoinecheron.application.restapi.ApiError
 import com.github.antoinecheron.domain.taskmanagement.entities.TodoState
-import com.github.antoinecheron.domain.taskmanagement.logic.updateTodo
 import com.github.antoinecheron.infrastructure.taskmanagement.Status
 import com.github.antoinecheron.infrastructure.taskmanagement.TodoRow
 import com.github.antoinecheron.infrastructure.taskmanagement.fromTodo
 import com.github.antoinecheron.infrastructure.taskmanagement.toTodo
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.reactive.awaitFirst
-import org.springframework.data.r2dbc.core.*
-
+import org.springframework.data.r2dbc.core.DatabaseClient
+import org.springframework.data.r2dbc.core.asType
+import org.springframework.data.r2dbc.core.await
+import org.springframework.data.r2dbc.core.awaitFirst
+import org.springframework.data.r2dbc.core.flow
+import org.springframework.data.r2dbc.core.from
 import org.springframework.data.r2dbc.query.Criteria
 import org.springframework.stereotype.Repository
 
 const val TODO_TABLE_NAME = "todo"
 
 @Repository
-class TodoRepository (private val client: DatabaseClient) {
+class TodoRepository(private val client: DatabaseClient) {
 
-  suspend fun findById (id: String): TodoState =
-    client.select().from(TODO_TABLE_NAME)
-      .asType<TodoRow>()
-      .matching(Criteria.where("id").`is`(id))
-      .fetch()
-      .awaitFirst()
-      .toTodo()
+    suspend fun findById(id: String): TodoState =
+        client.select().from(TODO_TABLE_NAME)
+            .asType<TodoRow>()
+            .matching(Criteria.where("id").`is`(id))
+            .fetch()
+            .awaitFirst()
+            .toTodo()
 
-  fun findAllWithStatus (status: Status): Flow<TodoState> {
-    val query = if (status == Status.ALL) {
-        client.select().from(TODO_TABLE_NAME).asType<TodoRow>()
-      } else {
-        val searchForCompletedTasks = status == Status.COMPLETED
-        client.select().from(TODO_TABLE_NAME).asType<TodoRow>()
-          .matching(Criteria.where("completed").`is`(searchForCompletedTasks))
+    fun findAllWithStatus(status: Status): Flow<TodoState> {
+        val query = if (status == Status.ALL) {
+            client.select().from(TODO_TABLE_NAME).asType<TodoRow>()
+        } else {
+            val searchForCompletedTasks = status == Status.COMPLETED
+            client.select().from(TODO_TABLE_NAME).asType<TodoRow>()
+                .matching(Criteria.where("completed").`is`(searchForCompletedTasks))
+        }
+
+        return query.fetch().flow().map { row -> row.toTodo() }
     }
 
-    return query.fetch().flow().map { row -> row.toTodo() }
-  }
+    suspend fun save(todo: TodoState): TodoState {
+        val row = TodoRow.fromTodo(todo)
 
-  suspend fun save(todo: TodoState): TodoState {
-    val row = TodoRow.fromTodo(todo)
-
-    client.execute("""
+        client.execute(
+            """
         INSERT INTO todo(id, title, completed) VALUES('${row.id}', '${row.title}', ${row.completed})
             ON DUPLICATE KEY UPDATE id='${row.id}';
-      """)
-      .await()
+      """
+        )
+            .await()
 
-    return row.toTodo()
-  }
-
-  @Throws(ApiError::class)
-  suspend fun delete (id: String): Unit {
-    val rowsUpdated = client.delete().from(TODO_TABLE_NAME)
-      .matching(Criteria.where("id").`is`(id)).fetch().rowsUpdated().awaitFirst()
-
-    if (rowsUpdated == 0) {
-      throw ApiError("Todo with id $id does not exist.", 404)
+        return row.toTodo()
     }
-  }
 
-  suspend fun deleteByStatus (status: Status): Unit = if (status == Status.ALL) {
-    client.delete().from(TODO_TABLE_NAME).fetch().rowsUpdated().awaitFirst()
-    Unit
-  } else {
-    val searchForCompletedTasks = status == Status.COMPLETED
-    client.delete().from<TodoRow>()
-      .matching(Criteria.where("completed").`is`(searchForCompletedTasks))
-      .fetch().rowsUpdated().awaitFirst()
-    Unit
-  }
+    @Throws(ApiError::class)
+    suspend fun delete(id: String) {
+        val rowsUpdated = client.delete().from(TODO_TABLE_NAME)
+            .matching(Criteria.where("id").`is`(id)).fetch().rowsUpdated().awaitFirst()
 
+        if (rowsUpdated == 0) {
+            throw ApiError("Todo with id $id does not exist.", 404)
+        }
+    }
+
+    suspend fun deleteByStatus(status: Status): Unit = if (status == Status.ALL) {
+        client.delete().from(TODO_TABLE_NAME).fetch().rowsUpdated().awaitFirst()
+        Unit
+    } else {
+        val searchForCompletedTasks = status == Status.COMPLETED
+        client.delete().from<TodoRow>()
+            .matching(Criteria.where("completed").`is`(searchForCompletedTasks))
+            .fetch().rowsUpdated().awaitFirst()
+        Unit
+    }
 }
