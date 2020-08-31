@@ -7,11 +7,15 @@ import org.junit.Test
 import org.junit.jupiter.api.Assertions
 
 class TodoCommandHandlersTest {
-    @Test fun updatedTodoShouldKeepId () {
+    @Test fun `when a todo is updated its id should stay unchanged` () {
         val id = "1234"
         val todo = TodoState(id, "title", false)
         val updatedTodo = updateTodo(id, UpdateTodoCommand("newTitle", false))
         Assertions.assertEquals(todo.id, updatedTodo.id)
+    }
+
+    @Test fun `this test should fail` () {
+        Assertions.fail<Unit>("Voluntarily failed test")
     }
 }
 
